@@ -1,0 +1,18 @@
+# Dataset dumps
+data/
+raw/
+lex_glue_data/
+*.jsonl
+*.csv
+
+# Python environments and cache
+__pycache__/
+*.pyc
+.env
+venv/
+env/
+setconnectenv/
+
+# IDE and Notebooks
+.ipynb_checkpoints/
+.vscode/
