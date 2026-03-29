@@ -1,70 +1,89 @@
-# Agentic NLP: Dataset Acquisition Pipeline
+# Agentic NLP: Dataset Pipeline & Processing
 
-This repository contains the scripts necessary to download and unify the initial datasets required for training our legal AI models, following the "Create initial dataset(s)" mandate. We have prioritized **LegalBench**, **LexGLUE**, and an auxiliary linguistics dataset (**Databricks Dolly**).
+This repository manages the data acquisition, exploratory data analysis (EDA), and data unification pipeline for the Legal AI training process. It transforms disjointed datasets into a strictly organized, single unified format (`JSONL`) ready for underlying LLM instruction-tuning.
 
-## Prerequisites
-Ensure your virtual environment is activated and the required Hugging Face libraries are installed:
+## Repository Structure
+
+```text
+NLP/
+├── data/                       # Final processed datasets
+│   └── training_master.jsonl   # 235k cleanly formatted records (The final output)
+│
+├── data_processing/            # Core cleaning & unifcation pipeline
+│   ├── config.py               # Tokens/length limits and paths
+│   ├── clean.py                # Removes duplicates, caps lengths, purges empty rows
+│   ├── unify_lex_glue.py       # Converts LexGLUE raw numbers to conversational texts
+│   ├── merge_master.py         # Shuffles and merges all datasets together
+│   ├── tokenize_and_stats.py   # Analyzes token counts against HuggingFace target models
+│   ├── eda_report.py           # Generates statistics on lengths, tasks, and class distributions
+│   └── eda_results.json        # Output of the EDA script
+│
+├── legalbench/                 # LegalBench raw download scripts & data
+├── lex_glue/                   # LexGLUE raw download scripts & data
+└── auxiliary/                  # Dolly 15k auxiliary download scripts & data
+```
+
+---
+
+## What the Datasets Are About
+
+* **[LegalBench](https://huggingface.co/datasets/nguha/legalbench):** Evaluates an LLM's capacity for short-form legal reasoning. Contains 162 unique legal logic tasks (e.g., classifying a trademark as 'generic', determining if a contract clause permits a certain action, or distinguishing between case facts).
+* **[LexGLUE](https://huggingface.co/datasets/lex_glue):** The premier benchmark for long-form legal text comprehension. Contains massive, real-world documents from the US and EU, including Supreme Court opinions, EU regulations, and Consumer Terms of Service. It focuses heavily on complex multi-label classification.
+* **[Databricks Dolly (Auxiliary)](https://huggingface.co/datasets/databricks/databricks-dolly-15k):** A high-quality general conversational dataset containing human-generated tasks like brainstorming, QA, and creative writing. This acts as a stabilizer to prevent the AI from losing its basic conversational abilities (catastrophic forgetting) while being fine-tuned aggressively on dense legal jargon.
+
+---
+
+## Data Format Pipeline: Raw vs. Processed
+
+**Initial Raw Text Formats:**
+Before this pipeline, the datasets could not be trained together natively because their structures were entirely disparate:
+* **LegalBench:** Arrived as 324 scattered files with raw text and hardcoded answers, lacking conversational direction. *(E.g., `{"text": "The mark 'Salt'...", "answer": "generic"}`)*
+* **LexGLUE:** Arrived as blobs of text mapping to raw arrays of abstract integer IDs. *(E.g., `{"text": "JUSTICE STEVENS delivered the opinion...", "labels": [1, 5]}`)*
+* **Dolly:** Arrived as JSON objects separated by `instruction` and `context` attributes.
+
+**Final Processed Format (`data/training_master.jsonl`):**
+To make the AI train successfully, we executed the `data_processing/` pipeline to unflatten the data, inject conversational prompts (e.g., *"Classify the main issue area of the following US Supreme Court opinion:"*), aggressively deduplicate rows (removing >50k exact text duplicates), enforce strict max token bounds, and unify the schemas perfectly. 
+
+Everything was merged into a **single, rigorously shuffled JSONL file** heavily curated to **235,533 train-ready records**. Every single record across all domains now exactly matches this underlying instruction-tuning structure needed for the LLM:
+```json
+{
+  "task": "lexglue_scotus",
+  "split": "train",
+  "instruction": "Classify the main issue area of the following US Supreme Court opinion:\n\nJUSTICE STEVENS delivered the opinion of the Court...",
+  "response": "38",
+  "source": "lexglue"
+}
+```
+
+---
+
+## Running the Pipeline
+
+If you need to regenerate the unified datasets from scratch:
+
+**1. Install Dependencies**
+Ensure your virtual environment is activated:
 ```powershell
-# Activate your environment
 setconnectenv\Scripts\activate
-
-# Install required packages
 pip install "datasets<3.0.0" pandas
 ```
 
----
-
-## 1. LegalBench Dataset
-**Goal:** 162 unique short-form legal reasoning tasks (Contracts, Hearsay, Legal Citations, etc.) formatted identically for instruction-tuning.
-
-### Steps to Download and Unify:
-1. **Download Raw Data:** `python legalbench/download_legalbench_bulk.py` (saves 324 raw JSONL files).
-2. **Unify Schemas:** `python legalbench/unify_legalbench.py` (combines all 162 tasks and injects the ground-truth text templates).
-3. **Output File:** `legalbench/data/legalbench_master.jsonl`
-
-### Example Output (`legalbench_master.jsonl`):
-```json
-{
-  "task": "abercrombie",
-  "split": "test",
-  "instruction": "A mark is generic if it is the common name for the product... \n\nQ: The mark 'Virgin' for wireless communications. What is the type of mark?\nA: arbitrary\n\nQ: The mark 'Tasty' for bread. What is the type of mark?\n",
-  "response": "descriptive"
-}
+**2. Download Datasets**
+```powershell
+python legalbench/download_legalbench_bulk.py
+python legalbench/unify_legalbench.py
+python lex_glue/download_lex_glue.py
+python auxiliary/download_auxiliary.py
 ```
 
----
+**3. Run the Processing Pipeline**
+```powershell
+# (Optional) Generate the EDA stats
+python data_processing/eda_report.py
 
-## 2. LexGLUE Dataset
-**Goal:** Long-form legal text understanding in both EU and US dialects (EUR-LEX, SCOTUS, ECtHR, Unfair ToS). Essential for training models to maintain context in dense 10+ page documents.
-
-### Steps to Download:
-1. **Download Raw Data:** `python lex_glue/download_lex_glue.py`
-2. **Output Location:** `lex_glue/lex_glue_data/` (separated by test/train/validation splits per task)
-
-### Example Output (Raw `unfair_tos` Task):
-```json
-{
-  "text": "By using our Services, you agree to be bound by these Terms. The company reserves the right to modify these specific terms at any time with exactly 0 days notice to the user.",
-  "labels": [1] 
-}
+# Unify, Clean, and Merge
+python data_processing/unify_lex_glue.py
+python data_processing/clean.py
+python data_processing/merge_master.py
 ```
-*(Note: Label `1` represents an unfair consumer clause).*
-
----
-
-## 3. Auxiliary Dataset (Databricks Dolly 15k)
-**Goal:** General linguistic dataset to prevent the legal fine-tuning from destroying the model's broader conversational capabilities. 
-
-### Steps to Download:
-1. **Download & Auto-Unify Data:** `python auxiliary/download_auxiliary.py`
-2. **Output File:** `auxiliary/data/auxiliary_master.jsonl`
-
-### Example Output (`auxiliary_master.jsonl`):
-```json
-{
-  "task": "dolly_summarization",
-  "split": "train",
-  "instruction": "Explain the plot of Cinderella in a single sentence.",
-  "response": "A young girl named Cinderella attends a royal ball, meets a handsome prince, and escapes her cruel stepmother by leaving behind a glass slipper."
-}
-```
+This systematically creates `data/training_master.jsonl`.

@@ -15,11 +15,12 @@ from collections import Counter, defaultdict
 from glob import glob
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
-BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
+SCRIPT_DIR    = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR      = os.path.dirname(SCRIPT_DIR)
 LB_MASTER     = os.path.join(BASE_DIR, "legalbench", "data", "legalbench_master.jsonl")
 LG_DIR        = os.path.join(BASE_DIR, "lex_glue", "lex_glue_data")
 AUX_MASTER    = os.path.join(BASE_DIR, "auxiliary", "data", "auxiliary_master.jsonl")
-OUTPUT_FILE   = os.path.join(BASE_DIR, "eda_results.json")
+OUTPUT_FILE   = os.path.join(SCRIPT_DIR, "eda_results.json")
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
