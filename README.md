@@ -6,22 +6,40 @@ This repository manages the data acquisition, exploratory data analysis (EDA), a
 
 ```text
 NLP/
-├── data/                       # Final processed datasets
-│   └── training_master.jsonl   # 235k cleanly formatted records (The final output)
+├── data/                       # Processed datasets & vector chunks
+│   ├── training_master.jsonl   # 235k cleanly formatted records (LLM text)
+│   └── vectorized_chunks_master.jsonl # 330k embedded chunks (Vector Search)
 │
-├── data_processing/            # Core cleaning & unifcation pipeline
-│   ├── config.py               # Tokens/length limits and paths
-│   ├── clean.py                # Removes duplicates, caps lengths, purges empty rows
-│   ├── unify_lex_glue.py       # Converts LexGLUE raw numbers to conversational texts
-│   ├── merge_master.py         # Shuffles and merges all datasets together
-│   ├── tokenize_and_stats.py   # Analyzes token counts against HuggingFace target models
-│   ├── eda_report.py           # Generates statistics on lengths, tasks, and class distributions
-│   └── eda_results.json        # Output of the EDA script
+├── data_processing/            # Cleaning, Unification, EDA
+│   └── ...                     # (clean.py, merge_master.py, eda_report.py)
 │
-├── legalbench/                 # LegalBench raw download scripts & data
-├── lex_glue/                   # LexGLUE raw download scripts & data
-└── auxiliary/                  # Dolly 15k auxiliary download scripts & data
+├── nlp_pipeline/               # Core Cloud RAG Architecture
+│   ├── vectorize.py            # Embeds chunks via all-mpnet-base-v2
+│   ├── index_pinecone_1gb.py   # High-perf async bulk uploader to Pinecone
+│   ├── fix_chroma_local.py     # Local ChromaDB build script 
+│   ├── rag_fixed.py            # Local RAG interactive terminal
+│   ├── api.py                  # Production FastAPI backend
+│   └── kg_generator.py         # Zero-Shot Knowledge Graph extraction via Groq
+│
+└── legalbench/, lex_glue/, auxiliary/ # Raw acquisition scripts
 ```
+
+---
+
+## The Cloud RAG Framework & Production API
+
+Moving beyond raw strings to fully autonomous legal discovery, the `nlp_pipeline` directory houses our enterprise Retrieval-Augmented Generation (RAG) structure:
+
+1.  **High-Quality Semantic Embedding:**
+    We discarded standard masked LLMs in favor of `sentence-transformers/all-mpnet-base-v2`, an incredibly precise 768-dimension sentence embedder capable of correctly discriminating strict legal contexts from generic noise.
+2.  **Scalable Vector Retrieval (Pinecone Cloud):**
+    Chunks are bulk-uploaded in the background to an AWS Pinecone Serverless index (`index_pinecone_1gb.py`), bypassing local memory limits and delivering massive 2TB-ready scalability.
+3.  **FastAPI REST Engine:**
+    The pipeline runs asynchronously on a robust `uvicorn` FastAPI server (`api.py`), automatically validating incoming JSON via Pydantic and providing instant swagger docs.
+4.  **Deep-Reasoning LLM (Groq Llama-3.3-70B):**
+    With context successfully retrieved from Pinecone, the logic is ferried into `llama-3.3-70b-versatile` over the Groq inference engine, outputting precise, lightning-fast answers augmented with verbatim chunk citations. 
+5.  **Knowledge Graph Extraction:**
+    We also operate `kg_generator.py`, which autonomously crawls legal text and uses `llama-3.1-8b` to output structured JSON representations of legal relationship matrices seamlessly (nodes and edges suitable for NetworkX/Neo4j graphing).
 
 ---
 
@@ -54,6 +72,18 @@ Everything was merged into a **single, rigorously shuffled JSONL file** heavily 
   "source": "lexglue"
 }
 ```
+
+---
+
+## ⚠️ Dataset Licensing & Usage Disclaimer
+
+When deploying models trained on these datasets, it is critical to adhere to the underlying licensing terms of the original data. This repository unifies the datasets but **inherits their original licenses:**
+
+*   **Databricks Dolly 15k:** Released under the **CC BY-SA 3.0** (Creative Commons Attribution-ShareAlike 3.0) license. Models trained on this data and any modifications must be distributed under the same terms.
+*   **LegalBench:** Released primarily under **CC BY 4.0** or **CC BY-NC 4.0** depending on the specific sub-tasks. Some of the 162 tasks contain proprietary formatting. *Disclaimer: Commercial use of certain sub-tasks may be restricted.*
+*   **LexGLUE:** A composite benchmark consisting of multiple licenses. Court opinions (SCOTUS, ECtHR) and EU regulations (EUR-LEX) are generally in the **Public Domain**. However, parts of the UNFAIR-ToS and LEDGAR datasets may carry restricted or non-commercial licenses.
+
+> **Legal Disclaimer:** This processing pipeline and the resulting `training_master.jsonl` are provided for research and educational purposes. If you plan to deploy a model trained on this data in a commercial product, you must conduct a formal legal review of all upstream data licenses incorporated in LegalBench and LexGLUE.
 
 ---
 
