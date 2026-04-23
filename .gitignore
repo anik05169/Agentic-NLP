@@ -6,6 +6,9 @@ venv/
 env/
 setconnectenv/
 
+# Runtime databases
+*.db
+
 # Massive Datasets (Do NOT push to GitHub)
 data/
 raw/
@@ -13,8 +16,10 @@ lex_glue_data/
 *.jsonl
 *.csv
 
-# Vector Databases and Models (Do NOT push to GitHub)
+# Vector Databases and Models
 chroma_db/
+chroma_db_fixed/
+chroma_db_poc/
 faiss_index/
 *.safetensors
 *.bin
@@ -24,12 +29,21 @@ faiss_index/
 .ipynb_checkpoints/
 .vscode/
 
+# Generated Knowledge Graphs and HTML
+*.html
+legal_kg.json
+semantic_proof_kg.json
+query_kg_*.json
+query_kg_*.html
+
 # Exploratory / Benchmarks
 bench.txt
 eda_results.json
+fuzzy_report*.json
+eval_report.json
 
-# Generated Knowledge Graphs & Local DBs
-chroma_db_fixed/
-chroma_db_poc/
-*.html
-legal_kg.json
+# Generated chunk artifacts
+vectorized_chunks*.jsonl
+
+# Vendored archives
+cuad/data.zip
