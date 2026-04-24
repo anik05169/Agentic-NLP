@@ -8,6 +8,7 @@ import json
 import os
 import time
 from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict
@@ -184,7 +185,13 @@ async def startup_event():
 
 @app.get("/")
 def read_root():
-    return {"status": "Legal AI API v3 is running with GraphRAG and memory enabled."}
+    return {"status": "Legal AI API v3 is running with GraphRAG and memory enabled.", "chat_ui": "/chat"}
+
+@app.get("/chat")
+def serve_chat():
+    """Serves the web chat frontend."""
+    chat_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "chat.html")
+    return FileResponse(chat_path, media_type="text/html")
 
 @app.post("/ask", response_model=QueryResponse)
 def ask_legal_question(request: QueryRequest, background_tasks: BackgroundTasks):

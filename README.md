@@ -118,6 +118,7 @@ NLP/
     ├── evaluate_rag.py          # Retrieval benchmarks
     ├── query_kg_generator.py    # KG extraction and graph builder
     ├── generate_kg_html.py      # Interactive graph visualization
+    ├── chat.html                # Web chat frontend (served at /chat)
     ├── test_memory_api.py       # Memory behavior tests
     └── lib/                     # Vendored JS for HTML graphs
 ```

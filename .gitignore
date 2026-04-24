@@ -13,6 +13,7 @@ setconnectenv/
 data/
 raw/
 lex_glue_data/
+cuad/
 *.jsonl
 *.csv
 
@@ -29,21 +30,16 @@ faiss_index/
 .ipynb_checkpoints/
 .vscode/
 
-# Generated Knowledge Graphs and HTML
-*.html
+# Generated Knowledge Graphs and HTML (except chat.html)
 legal_kg.json
-semantic_proof_kg.json
 query_kg_*.json
 query_kg_*.html
+interactive_kg.html
 
 # Exploratory / Benchmarks
 bench.txt
 eda_results.json
-fuzzy_report*.json
 eval_report.json
 
 # Generated chunk artifacts
 vectorized_chunks*.jsonl
-
-# Vendored archives
-cuad/data.zip

@@ -67,16 +67,16 @@ NLP/
 │
 ├── nlp_pipeline/               # Core runtime engine
 │   ├── runtime_config.py       # Shared configuration
-│   ├── api.py                  # FastAPI server
+│   ├── api.py                  # FastAPI server (GraphRAG + Memory)
 │   ├── interactive_search.py   # CLI query tool (GraphRAG + Memory)
 │   ├── memory_manager.py       # Dual-memory engine
 │   ├── evaluate_rag.py         # Retrieval benchmarks
 │   ├── query_kg_generator.py   # KG extraction and graph builder
 │   ├── generate_kg_html.py     # Interactive graph visualization
+│   ├── chat.html               # Web chat frontend
 │   ├── test_memory_api.py      # Memory behavior test suite
 │   └── lib/                    # Vendored JS for HTML graphs
 │
-├── cuad/                       # CUAD contract dataset (external)
 └── chroma_db_fixed/            # Local ChromaDB vector index
 ```
 
@@ -140,9 +140,9 @@ Raw legal datasets arrive in different structures. The pipeline normalizes them 
 
 | Source | Purpose | Content |
 |---|---|---|
-| LegalBench | Short-form legal reasoning | Issue spotting, rule application, clause reasoning |
+| LegalBench | Short-form legal reasoning | 162 tasks: issue spotting, rule application, clause reasoning |
 | LexGLUE | Long-form legal comprehension | SCOTUS opinions, EU law, terms of service |
-| LEDGAR | Contract clause classification | Clause text and clause labels |
+| LEDGAR | Contract clause classification | ~60k contract clauses and labels |
 | Auxiliary | General instruction-following | Conversational and general-purpose examples |
 
 ### Pipeline Stages
